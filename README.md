@@ -62,13 +62,11 @@ This update ([GitHub tag: E06](https://github.com/rust10x/rust-web-app/releases/
 
 ```sh
 # Start postgresql server docker image:
-docker run --rm --name pg -p 5432:5432 \
-   -e POSTGRES_PASSWORD=welcome \
-   postgres:17
+podman run --rm --name pg -p 5432:5432 -e POSTGRES_PASSWORD=welcome postgres:17
 
 # (optional) To have a psql terminal on pg. 
 # In another terminal (tab) run psql:
-docker exec -it -u postgres pg psql
+podman exec -it -u postgres pg psql
 
 # (optional) For pg to print all sql statements.
 # In psql command line started above.
@@ -92,9 +90,13 @@ cargo watch -q -c -w crates/services/web-server/examples/ -x "run -p web-server 
 ```sh
 # Terminal 1 - To run the server.
 cargo run -p web-server
+# or
+bacon run -- --bin web-server
 
 # Terminal 2 - To run the tests.
 cargo run -p web-server --example quick_dev
+# or
+bacon run -- --example quick_dev
 ```
 
 ## Unit Test (watch)

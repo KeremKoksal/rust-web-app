@@ -1,0 +1,36 @@
+### Login
+POST http://localhost:8080/api/login
+Content-Type: application/json
+
+{
+  "username": "demo1",
+  "pwd": "welcome"
+}
+
+### Create
+POST http://localhost:8080/api/rpc
+Content-Type: application/json
+
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "create_agent",
+    "params": {
+      "data": {
+        "name": "agent AAA"
+      }
+    }
+}
+
+### Read
+POST http://localhost:8080/api/rpc
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "get_agent",
+  "params": {
+    "id": 1
+  }
+}

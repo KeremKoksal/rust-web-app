@@ -39,8 +39,11 @@ pub async fn init_dev_db() -> Result<(), Box<dyn std::error::Error>> {
 	// -- Create the app_db/app_user with the postgres user.
 	{
 		let sql_recreate_db_file = sql_dir.join(SQL_RECREATE_DB_FILE_NAME);
+		info!("{:<12} - sql_recreate_db_file()", "FOR-DEV-ONLY");
 		let root_db = new_db_pool(PG_DEV_POSTGRES_URL).await?;
+		info!("{:<12} - new_db_pool()", "FOR-DEV-ONLY");
 		pexec(&root_db, &sql_recreate_db_file).await?;
+		info!("{:<12} - recreate_db_file()", "FOR-DEV-ONLY");
 	}
 
 	// -- Get sql files.
@@ -98,8 +101,8 @@ async fn pexec(db: &Db, file: &Path) -> Result<(), sqlx::Error> {
 
 async fn new_db_pool(db_con_url: &str) -> Result<Db, sqlx::Error> {
 	PgPoolOptions::new()
-		.max_connections(1)
-		.acquire_timeout(Duration::from_millis(500))
+		.max_connections(20)
+		.acquire_timeout(Duration::from_millis(3000))
 		.connect(db_con_url)
 		.await
 }

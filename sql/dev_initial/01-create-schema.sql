@@ -20,7 +20,7 @@ CREATE TABLE "user" (
 
   username varchar(128) NOT NULL UNIQUE,
   typ user_typ NOT NULL DEFAULT 'User',
-
+  gpa numeric(3, 2) NULL,
   -- Auth
   pwd varchar(256),
   pwd_salt uuid NOT NULL DEFAULT gen_random_uuid(),

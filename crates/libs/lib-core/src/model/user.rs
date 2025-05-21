@@ -1,18 +1,17 @@
 use crate::ctx::Ctx;
-use crate::model::base::{self, prep_fields_for_update, DbBmc};
+use crate::model::base::{self, prep_fields_for_update, DbBmc, TheBigDecimal};
 use crate::model::modql_utils::time_to_sea_value;
 use crate::model::ModelManager;
 use crate::model::{Error, Result};
 use lib_auth::pwd::{self, ContentToHash};
 use modql::field::{Fields, HasSeaFields, SeaField, SeaFields};
-use modql::filter::{
-	FilterNodes, ListOptions, OpValsInt64, OpValsString, OpValsValue,
-};
+use modql::filter::{FilterNodes, ListOptions, OpValsFloat64, OpValsInt64, OpValsString, OpValsValue};
 use sea_query::{Expr, Iden, PostgresQueryBuilder, Query};
 use sea_query_binder::SqlxBinder;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
 use sqlx::FromRow;
+
 use uuid::Uuid;
 
 // region:    --- User Types
@@ -33,17 +32,20 @@ pub struct User {
 	pub id: i64,
 	pub username: String,
 	pub typ: UserTyp,
+	pub gpa: Option<TheBigDecimal>,
 }
 
 #[derive(Deserialize)]
 pub struct UserForCreate {
 	pub username: String,
 	pub pwd_clear: String,
+	pub gpa: Option<TheBigDecimal>,
 }
 
 #[derive(Fields)]
 pub struct UserForInsert {
 	pub username: String,
+	pub gpa: Option<TheBigDecimal>,
 }
 
 #[derive(Clone, FromRow, Fields, Debug)]
@@ -55,6 +57,7 @@ pub struct UserForLogin {
 	pub pwd: Option<String>, // encrypted, #_scheme_id_#....
 	pub pwd_salt: Uuid,
 	pub token_salt: Uuid,
+	pub gpa: Option<TheBigDecimal>,
 }
 
 #[derive(Clone, FromRow, Fields, Debug)]
@@ -89,6 +92,8 @@ pub struct UserFilter {
 
 	pub username: Option<OpValsString>,
 
+	pub gpa: Option<OpValsFloat64>,
+
 	pub cid: Option<OpValsInt64>,
 	#[modql(to_sea_value_fn = "time_to_sea_value")]
 	pub ctime: Option<OpValsValue>,
@@ -116,11 +121,13 @@ impl UserBmc {
 		let UserForCreate {
 			username,
 			pwd_clear,
+			gpa,
 		} = user_c;
 
 		// -- Create the user row
 		let user_fi = UserForInsert {
 			username: username.to_string(),
+			gpa,
 		};
 
 		// Start the transaction
@@ -247,6 +254,9 @@ mod tests {
 	pub type Result<T> = core::result::Result<T, Error>;
 	pub type Error = Box<dyn std::error::Error>; // For tests.
 
+	use std::str::FromStr;
+	use bigdecimal::BigDecimal;
+	use serde_json::json;
 	use super::*;
 	use crate::_dev_utils;
 	use serial_test::serial;
@@ -259,7 +269,7 @@ mod tests {
 		let ctx = Ctx::root_ctx();
 		let fx_username = "test_create_ok-user-01";
 		let fx_pwd_clear = "test_create_ok pwd 01";
-
+		let gpa:Option<TheBigDecimal> = Some(BigDecimal::from_str("3.44").unwrap().into());
 		// -- Exec
 		let user_id = UserBmc::create(
 			&ctx,
@@ -267,6 +277,7 @@ mod tests {
 			UserForCreate {
 				username: fx_username.to_string(),
 				pwd_clear: fx_pwd_clear.to_string(),
+				gpa: gpa.clone(),
 			},
 		)
 		.await?;
@@ -274,6 +285,28 @@ mod tests {
 		// -- Check
 		let user: UserForLogin = UserBmc::get(&ctx, &mm, user_id).await?;
 		assert_eq!(user.username, fx_username);
+		assert_eq!(user.gpa, gpa);
+
+		let user_filter: UserFilter = serde_json::from_value(json!(
+			{
+				"username": {
+					"$eq": "test_create_ok-user-01"
+				},
+				"gpa":  {
+					"$eq": 3.44
+				}
+
+			}
+		))?;
+
+		let users: Vec<User> = UserBmc::list(
+			&ctx,
+			&mm,
+			Some(vec![user_filter]),
+			None,
+		).await?;
+
+		println!("users: {:?}", users);
 
 		// -- Clean
 		UserBmc::delete(&ctx, &mm, user_id).await?;

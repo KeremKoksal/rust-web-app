@@ -5,3 +5,9 @@ pub fn time_to_sea_value(
 ) -> modql::filter::SeaResult<sea_query::Value> {
 	Ok(rfc3339::deserialize(json_value)?.into())
 }
+
+pub fn the_big_decimal_to_sea_value(
+	json_value: serde_json::Value,
+) -> modql::filter::SeaResult<sea_query::Value> {
+	Ok(rfc3339::deserialize(json_value)?.into())
+}

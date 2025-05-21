@@ -43,7 +43,8 @@ pub enum Error {
 	// -- Externals
 	#[from]
 	SeaQuery(#[serde_as(as = "DisplayFromStr")] sea_query::error::Error),
-
+	#[from]
+	BigDecimalError(#[serde_as(as = "DisplayFromStr")] bigdecimal::ParseBigDecimalError),
 	#[from]
 	ModqlIntoSea(#[serde_as(as = "DisplayFromStr")] modql::filter::IntoSeaError),
 }

@@ -3,11 +3,12 @@
 mod crud_fns;
 mod macro_utils;
 mod utils;
+mod modql_ext;
 
 // -- Flatten hierarchy for user code.
 pub use crud_fns::*;
 pub use utils::*;
-
+pub use modql_ext::*;
 use modql::SIden;
 use sea_query::{Iden, IntoIden, TableRef};
 
